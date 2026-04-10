@@ -1,101 +1,1082 @@
-Au
-Trading Performance
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trading Performance</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#e8e6e0; --bg2:#f0ede8; --bg3:#dbd8d2;
+    --border:#c8c5be; --border2:#b0ada6;
+    --text:#2c2a26; --text2:#7a7670; --text3:#b0ada6;
+    --accent:#3d5a4a; --accent-dim:rgba(61,90,74,0.12);
+    --red:#7a2e2e; --red-dim:rgba(122,46,46,0.10);
+    --green:#3d5a4a; --teal:#2e4a5a; --teal-dim:rgba(46,74,90,0.12);
+    --amber:#7a5a2e;
+    --mono:'JetBrains Mono',monospace; --sans:'DM Sans',sans-serif;
+    --radius:8px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh;}
 
-broker api connected
-last sync: 17:32 SGT
-PERIOD
-This month
-Last month
-Year to date
-All time
-Custom range
-Showing: All time
-PERFORMANCE SUMMARY
-NET CUMULATIVE P&L
-—
-—
-DAY WIN %
-—
-—
-PROFIT FACTOR
-—
+  /* ── Header ── */
+  .header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 32px;border-bottom:1px solid var(--border2);
+    background:var(--bg2);position:sticky;top:0;z-index:100;
+  }
+  .header-left{display:flex;align-items:center;gap:14px;}
+  .logo-mark{
+    width:32px;height:32px;background:var(--accent);border-radius:var(--radius);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--mono);font-size:12px;font-weight:700;color:var(--bg2);letter-spacing:-0.5px;
+  }
+  .header-title{font-size:15px;font-weight:600;color:var(--text);}
+  .header-right{display:flex;align-items:center;gap:14px;}
+  .api-status{
+    display:flex;align-items:center;gap:7px;font-size:11px;font-family:var(--mono);color:var(--text2);
+    background:var(--bg3);border:1px solid var(--border);padding:5px 11px;border-radius:20px;
+  }
+  .api-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2.4s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}
+  .last-sync{font-size:11px;font-family:var(--mono);color:var(--text3);}
 
-0
-1.0
-1.5
-2.0
-3.0+
-SHARPE RATIO
-—
-—
-—
-EDGE METRICS
-WIN RATE
+  /* ── Filter bar ── */
+  .filter-bar{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    padding:12px 32px;background:var(--bg2);border-bottom:1px solid var(--border);
+  }
+  .filter-label{font-size:10px;font-family:var(--mono);font-weight:600;color:var(--text3);letter-spacing:0.12em;text-transform:uppercase;margin-right:4px;}
+  .filter-pills{display:flex;gap:6px;flex-wrap:wrap;}
+  .pill{
+    font-size:11px;font-family:var(--mono);font-weight:500;
+    padding:5px 13px;border-radius:20px;cursor:pointer;
+    border:1px solid var(--border);background:var(--bg3);color:var(--text2);
+    transition:all 0.15s;white-space:nowrap;
+  }
+  .pill:hover{border-color:var(--border2);color:var(--text);}
+  .pill.active{background:var(--accent);border-color:var(--accent);color:var(--bg2);}
 
-—
-wins
-—
-winners
-—
-losers
-—
-total trades
-AVG WIN VS AVG LOSS
-Avg Win
-—
-—
-Avg Loss
-—
-—
-—
-EXPECTANCY PER TRADE
-EXPECTED VALUE / TRADE
-—
-—
-PROJECTED MONTHLY ×—
-—
-at current edge · pre-costs
-RISK-REWARD PER TRADE
-PLANNED R:R
-CLICK TO EDIT
-1.6 : 1
-target set pre-trade
-REALISED R:R
-—
-—
-LONG VS SHORT
+  /* ── Custom date range ── */
+  .custom-range{
+    display:none;align-items:center;gap:8px;margin-left:4px;
+  }
+  .custom-range.visible{display:flex;}
+  .date-input{
+    font-family:var(--mono);font-size:11px;color:var(--text);
+    background:var(--bg3);border:1px solid var(--border);border-radius:6px;
+    padding:5px 9px;outline:none;transition:border-color 0.15s;
+  }
+  .date-input:focus{border-color:var(--accent);}
+  .date-sep{font-size:11px;font-family:var(--mono);color:var(--text3);}
+  .apply-btn{
+    font-size:11px;font-family:var(--mono);font-weight:600;
+    padding:5px 12px;border-radius:6px;cursor:pointer;
+    background:var(--accent);border:1px solid var(--accent);color:var(--bg2);
+    transition:all 0.15s;
+  }
+  .apply-btn:hover{filter:brightness(1.1);}
 
+  /* ── Active period label ── */
+  .period-tag{
+    margin-left:auto;font-size:11px;font-family:var(--mono);color:var(--text2);
+    background:var(--bg3);border:1px solid var(--border);
+    padding:4px 10px;border-radius:4px;white-space:nowrap;
+  }
+  .period-tag strong{color:var(--accent);}
 
-—
-—
+  /* ── Layout ── */
+  .main{padding:22px 32px 56px;max-width:1400px;margin:0 auto;}
+  .section-label{
+    font-size:10px;font-family:var(--mono);font-weight:600;color:var(--text3);
+    letter-spacing:0.14em;text-transform:uppercase;
+    margin-bottom:10px;margin-top:24px;padding-bottom:6px;border-bottom:1px solid var(--border);
+  }
+  .grid-4  {display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  .grid-2  {display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+  .grid-2-1{display:grid;grid-template-columns:2fr 1fr;gap:12px;}
 
-—
-—
-RETURNS & RISK
-ACCOUNT BALANCE
-Equity curve · S$
+  /* ── Cards ── */
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;}
+  .card-label{font-size:10px;font-family:var(--mono);font-weight:600;color:var(--text2);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;}
+  .card-value{font-size:28px;font-weight:700;font-family:var(--mono);line-height:1.1;letter-spacing:-0.03em;color:var(--text);}
+  .card-value.green{color:var(--green);} .card-value.red{color:var(--red);}
+  .card-value.teal{color:var(--teal);}  .card-value.amber{color:var(--amber);}
+  .card-sub{font-size:11px;color:var(--text2);font-family:var(--mono);margin-top:5px;}
+  .card-sub .up{color:var(--green);} .card-sub .dn{color:var(--red);}
+  .card-title{
+    font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
+    color:var(--text2);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;
+  }
+  .card-title span{font-family:var(--mono);font-size:10px;color:var(--text3);font-weight:400;letter-spacing:0;text-transform:none;}
 
-ACCOUNT GROWTH
-% return on starting capital
+  /* ── Profit factor gauge ── */
+  .pf-bar-track{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin:10px 0 5px;border:1px solid var(--border);}
+  .pf-bar-fill{height:100%;border-radius:3px;background:var(--accent);transition:width 0.5s ease;}
+  .pf-ticks{display:flex;justify-content:space-between;font-size:9px;font-family:var(--mono);color:var(--text3);}
 
-MAX DRAWDOWN
-—
-—
-CURRENT DRAWDOWN
-—
-from last equity peak
-AVG RECOVERY TIME
-—
-across all drawdown events
-DAILY SUMMARY — CURRENT MONTH
-←
-—
-→
-EXECUTION ANALYSIS
-TRADE DURATION VS PERFORMANCE
-hold time → avg P&L by bucket
+  /* ── Sharpe badge ── */
+  .sharpe-badge{
+    display:inline-flex;align-items:center;background:var(--teal-dim);
+    border:1px solid rgba(46,74,90,0.2);border-radius:4px;padding:3px 8px;
+    font-size:10px;font-family:var(--mono);color:var(--teal);margin-top:7px;
+  }
 
-ENTRY TIME VS PERFORMANCE
-SGT · each dot = 1 trade
+  /* ── Win rate ring ── */
+  .ring-wrap{display:flex;align-items:center;gap:18px;margin-top:6px;}
+  .ring-canvas-wrap{position:relative;width:88px;height:88px;flex-shrink:0;}
+  .ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .ring-pct{font-size:18px;font-weight:700;font-family:var(--mono);color:var(--accent);}
+  .ring-lbl{font-size:9px;color:var(--text3);font-family:var(--mono);letter-spacing:0.06em;}
+  .ring-stats{display:flex;flex-direction:column;gap:8px;}
+  .ring-stat-val{font-size:16px;font-weight:700;font-family:var(--mono);}
+  .ring-stat-lbl{font-size:10px;color:var(--text2);font-family:var(--mono);}
 
-Data sourced via ⬡ broker api — MT5 → HTML export → Python sync → Google Sheets  ·  All figures in SGD
+  /* ── Avg win/loss bars ── */
+  .awl-wrap{display:flex;flex-direction:column;gap:11px;margin-top:6px;}
+  .awl-bar-row{display:flex;flex-direction:column;gap:5px;}
+  .awl-labels{display:flex;justify-content:space-between;font-size:11px;font-family:var(--mono);}
+  .awl-track{height:26px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;overflow:hidden;}
+  .awl-fill-win{height:100%;border-radius:4px 0 0 4px;background:var(--green);display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:11px;font-family:var(--mono);color:var(--bg2);font-weight:600;transition:width 0.5s ease;}
+  .awl-fill-loss{height:100%;border-radius:4px 0 0 4px;background:var(--red);display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:11px;font-family:var(--mono);color:var(--bg2);font-weight:600;transition:width 0.5s ease;}
+  .awl-ratio{font-size:11px;font-family:var(--mono);color:var(--text2);text-align:center;margin-top:3px;}
+
+  /* ── Metric blocks ── */
+  .metric-block{background:var(--bg3);border-radius:6px;padding:11px 13px;margin-bottom:8px;border:1px solid var(--border);}
+  .metric-block:last-child{margin-bottom:0;}
+  .metric-block-label{font-size:10px;font-family:var(--mono);font-weight:600;color:var(--text2);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3px;}
+  .metric-block-value{font-size:21px;font-weight:700;font-family:var(--mono);color:var(--text);}
+  .metric-block-sub{font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:3px;}
+
+  /* ── Calendar ── */
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr) 90px;gap:4px;margin-top:4px;}
+  .cal-month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .cal-month-title{font-size:13px;font-weight:600;font-family:var(--mono);color:var(--text);}
+  .cal-nav-btn{
+    font-size:13px;font-family:var(--mono);font-weight:600;color:var(--text2);
+    background:var(--bg3);border:1px solid var(--border);border-radius:5px;
+    padding:3px 10px;cursor:pointer;transition:all 0.12s;
+  }
+  .cal-nav-btn:hover{border-color:var(--border2);color:var(--text);}
+  .cal-day-hdr{font-size:11px;font-family:var(--mono);font-weight:600;color:var(--text2);text-align:center;padding:6px 0 8px;letter-spacing:0.08em;text-transform:uppercase;}
+  .cal-cell{border-radius:6px;padding:8px 7px 7px;min-height:72px;display:flex;flex-direction:column;justify-content:space-between;border:1px solid transparent;transition:border-color 0.12s;cursor:default;}
+  .cal-cell:hover{border-color:var(--border2);}
+  .cal-cell.empty{background:transparent;border:none;}
+  .cal-cell.win{background:rgba(61,90,74,0.10);}
+  .cal-cell.loss{background:rgba(122,46,46,0.08);}
+  .cal-cell.flat{background:var(--bg3);}
+  .cal-week-hdr{font-size:11px;font-family:var(--mono);font-weight:600;color:var(--text3);text-align:center;padding:6px 0 8px;letter-spacing:0.08em;text-transform:uppercase;}
+  .cal-week-cell{border-radius:6px;padding:8px 7px 7px;min-height:72px;display:flex;flex-direction:column;justify-content:space-between;background:var(--bg3);border:1px solid var(--border);}
+  .cal-week-label{font-size:9px;font-family:var(--mono);color:var(--text3);text-align:center;text-transform:uppercase;letter-spacing:0.06em;}
+  .cal-week-pnl{font-size:12px;font-family:var(--mono);font-weight:700;text-align:center;line-height:1.3;}
+  .cal-week-pnl.pos{color:var(--green);}.cal-week-pnl.neg{color:var(--red);}
+  .cal-week-trades{font-size:10px;font-family:var(--mono);color:var(--text3);text-align:center;}
+  .cal-week-wr{font-size:10px;font-family:var(--mono);color:var(--text2);text-align:center;}
+  .cal-pnl{font-size:13px;font-family:var(--mono);font-weight:700;text-align:center;line-height:1.3;}
+  .cal-pnl.pos{color:var(--green);} .cal-pnl.neg{color:var(--red);}
+  .cal-trades{font-size:11px;font-family:var(--mono);color:var(--text3);text-align:center;}
+  .cal-wr{font-size:11px;font-family:var(--mono);color:var(--text2);text-align:center;}
+
+  .chart-wrap{position:relative;width:100%;}
+  canvas{display:block;}
+
+  /* ── No data state ── */
+  .no-data{
+    display:flex;align-items:center;justify-content:center;
+    height:100%;min-height:120px;
+    font-size:12px;font-family:var(--mono);color:var(--text3);
+  }
+
+  /* ── Footer ── */
+  .footer-note{font-size:11px;font-family:var(--mono);color:var(--text3);text-align:center;margin-top:40px;padding-top:18px;border-top:1px solid var(--border);}
+  .api-tag{display:inline-flex;align-items:center;gap:4px;background:var(--accent-dim);border:1px solid rgba(61,90,74,0.2);border-radius:4px;padding:2px 7px;font-size:10px;font-family:var(--mono);color:var(--accent);margin:0 2px;}
+
+  @media(max-width:1100px){.grid-4{grid-template-columns:repeat(2,1fr);}.grid-2-1{grid-template-columns:1fr;}}
+  @media(max-width:700px){.main{padding:16px;}.header,.filter-bar{padding-left:16px;padding-right:16px;}.grid-4,.grid-2{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header class="header">
+  <div class="header-left">
+    <div class="logo-mark">Au</div>
+    <div class="header-title">Trading Performance</div>
+  </div>
+  <div class="header-right">
+    <div class="api-status"><div class="api-dot" id="apiDot"></div>broker api connected</div>
+    <div class="last-sync" id="syncLabel">last sync: 17:32 SGT</div>
+  </div>
+</header>
+
+<!-- ── FILTER BAR ── -->
+<div class="filter-bar">
+  <span class="filter-label">Period</span>
+  <div class="filter-pills">
+    <div class="pill" data-period="this_month"  onclick="setPeriod('this_month')">This month</div>
+    <div class="pill" data-period="last_month"  onclick="setPeriod('last_month')">Last month</div>
+    <div class="pill" data-period="ytd"         onclick="setPeriod('ytd')">Year to date</div>
+    <div class="pill active" data-period="all"  onclick="setPeriod('all')">All time</div>
+    <div class="pill" data-period="custom"      onclick="setPeriod('custom')">Custom range</div>
+  </div>
+  <div class="custom-range" id="customRange">
+    <input type="date" class="date-input" id="dateFrom">
+    <span class="date-sep">→</span>
+    <input type="date" class="date-input" id="dateTo">
+    <button class="apply-btn" onclick="applyCustom()">Apply</button>
+  </div>
+  <div class="period-tag" id="periodTag">Showing: <strong>All time</strong></div>
+</div>
+
+<!-- ── MAIN ── -->
+<div class="main">
+
+  <!-- ── 1. Summary KPIs ── -->
+  <div class="section-label">Performance summary</div>
+  <div class="grid-4">
+    <div class="card">
+      <div class="card-label">Net Cumulative P&amp;L</div>
+      <div class="card-value green" id="kpi-pnl">—</div>
+      <div class="card-sub" id="kpi-ror">—</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Day Win %</div>
+      <div class="card-value amber" id="kpi-daywin">—</div>
+      <div class="card-sub" id="kpi-daywin-sub">—</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Profit Factor</div>
+      <div class="card-value teal" id="kpi-pf">—</div>
+      <div class="pf-bar-track"><div class="pf-bar-fill" id="pf-fill" style="width:0%"></div></div>
+      <div class="pf-ticks"><span>0</span><span>1.0</span><span>1.5</span><span>2.0</span><span>3.0+</span></div>
+    </div>
+    <div class="card">
+      <div class="card-label">Sharpe Ratio</div>
+      <div class="card-value teal" id="kpi-sharpe">—</div>
+      <div class="sharpe-badge" id="kpi-sharpe-badge">—</div>
+      <div class="card-sub" id="kpi-sortino" style="margin-top:8px">—</div>
+    </div>
+  </div>
+
+  <!-- ── 2. Edge metrics ── -->
+  <div class="section-label">Edge metrics</div>
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;">
+
+    <div class="card">
+      <div class="card-label">Win Rate</div>
+      <div class="ring-wrap">
+        <div class="ring-canvas-wrap">
+          <canvas id="winRateRing" width="88" height="88"></canvas>
+          <div class="ring-center">
+            <div class="ring-pct" id="ring-pct">—</div>
+            <div class="ring-lbl">wins</div>
+          </div>
+        </div>
+        <div class="ring-stats">
+          <div><div class="ring-stat-val green" id="ring-wins" style="color:var(--green)">—</div><div class="ring-stat-lbl">winners</div></div>
+          <div><div class="ring-stat-val" id="ring-losses" style="color:var(--red)">—</div><div class="ring-stat-lbl">losers</div></div>
+          <div><div class="ring-stat-val" id="ring-total" style="color:var(--text2)">—</div><div class="ring-stat-lbl">total trades</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Avg Win vs Avg Loss</div>
+      <div class="awl-wrap">
+        <div class="awl-bar-row">
+          <div class="awl-labels"><span style="color:var(--green)">Avg Win</span><span id="awl-win-val" style="color:var(--green);font-weight:600">—</span></div>
+          <div class="awl-track"><div class="awl-fill-win" id="awl-win-bar" style="width:0%">—</div></div>
+        </div>
+        <div class="awl-bar-row">
+          <div class="awl-labels"><span style="color:var(--red)">Avg Loss</span><span id="awl-loss-val" style="color:var(--red);font-weight:600">—</span></div>
+          <div class="awl-track"><div class="awl-fill-loss" id="awl-loss-bar" style="width:0%">—</div></div>
+        </div>
+        <div class="awl-ratio" id="awl-ratio">—</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Expectancy per Trade</div>
+      <div style="margin-top:6px">
+        <div class="metric-block">
+          <div class="metric-block-label">Expected value / trade</div>
+          <div class="metric-block-value" id="exp-val" style="color:var(--green)">—</div>
+          <div class="metric-block-sub" id="exp-formula">—</div>
+        </div>
+        <div class="metric-block">
+          <div class="metric-block-label">Projected monthly ×<span id="exp-n">—</span></div>
+          <div class="metric-block-value" id="exp-monthly" style="color:var(--accent)">—</div>
+          <div class="metric-block-sub">at current edge · pre-costs</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Risk-Reward per Trade</div>
+      <div style="margin-top:6px">
+        <div class="metric-block" id="planned-rr-block" style="cursor:pointer;" onclick="startEditRR()" title="Click to edit">
+          <div class="metric-block-label" style="display:flex;align-items:center;justify-content:space-between;">
+            Planned R:R
+            <span id="rr-edit-hint" style="font-size:9px;color:var(--text3);letter-spacing:0.06em;">click to edit</span>
+          </div>
+          <div id="rr-display" style="display:flex;align-items:baseline;gap:6px;">
+            <div class="metric-block-value" id="planned-rr-val" style="color:var(--teal)">1.6 : 1</div>
+          </div>
+          <div id="rr-edit-wrap" style="display:none;align-items:center;gap:6px;margin-top:4px;">
+            <input id="rr-input" type="number" min="0.1" max="20" step="0.1"
+              style="width:68px;font-family:var(--mono);font-size:18px;font-weight:700;color:var(--teal);
+                     background:var(--bg2);border:1.5px solid var(--accent);border-radius:5px;
+                     padding:3px 7px;outline:none;"
+              onkeydown="handleRRKey(event)" onblur="commitRR()">
+            <span style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--teal)">: 1</span>
+          </div>
+          <div class="metric-block-sub" id="rr-planned-sub">target set pre-trade</div>
+        </div>
+        <div class="metric-block">
+          <div class="metric-block-label">Realised R:R</div>
+          <div class="metric-block-value" id="rr-realised" style="color:var(--amber)">—</div>
+          <div class="metric-block-sub" id="rr-leak" style="color:var(--red)">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Long / Short pie -->
+    <div class="card">
+      <div class="card-label">Long vs Short</div>
+      <div style="display:flex;align-items:center;gap:18px;margin-top:6px;">
+        <div style="position:relative;width:88px;height:88px;flex-shrink:0;">
+          <canvas id="longShortPie" width="88" height="88"></canvas>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div style="width:8px;height:8px;border-radius:50%;background:#3d5a4a;flex-shrink:0;"></div>
+              <div style="font-size:16px;font-weight:700;font-family:var(--mono);color:var(--green)" id="ls-long-pct">—</div>
+            </div>
+            <div style="font-size:10px;color:var(--text2);font-family:var(--mono)" id="ls-long-n">—</div>
+          </div>
+          <div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div style="width:8px;height:8px;border-radius:50%;background:#7a2e2e;flex-shrink:0;"></div>
+              <div style="font-size:16px;font-weight:700;font-family:var(--mono);color:var(--red)" id="ls-short-pct">—</div>
+            </div>
+            <div style="font-size:10px;color:var(--text2);font-family:var(--mono)" id="ls-short-n">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div class="section-label">Returns &amp; risk</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:start;">
+    <div class="card">
+      <div class="card-title">Account balance <span id="chart-period-label">Equity curve · S$</span></div>
+      <div class="chart-wrap" style="height:200px"><canvas id="pnlChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Account growth <span>% return on starting capital</span></div>
+      <div class="chart-wrap" style="height:200px"><canvas id="growthChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-label">Max Drawdown</div>
+      <div class="card-value red" id="kpi-dd">—</div>
+      <div class="card-sub" id="kpi-dd-sub" style="margin-bottom:14px">—</div>
+      <div class="metric-block">
+        <div class="metric-block-label">Current drawdown</div>
+        <div class="metric-block-value" id="kpi-cur-dd" style="color:var(--amber);font-size:18px">—</div>
+        <div class="metric-block-sub">from last equity peak</div>
+      </div>
+      <div class="metric-block" style="margin-top:8px">
+        <div class="metric-block-label">Avg recovery time</div>
+        <div class="metric-block-value" id="kpi-recovery" style="color:var(--text2);font-size:18px">—</div>
+        <div class="metric-block-sub">across all drawdown events</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 4. Calendar (always current month) ── -->
+  <div class="section-label">Daily summary — current month</div>
+  <div class="card">
+    <div class="cal-month-nav">
+      <button class="cal-nav-btn" onclick="shiftCalMonth(-1)">&#8592;</button>
+      <div class="cal-month-title" id="calMonthTitle">—</div>
+      <button class="cal-nav-btn" onclick="shiftCalMonth(1)">&#8594;</button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+
+  <!-- ── 5. Execution analysis ── -->
+  <div class="section-label">Execution analysis</div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Trade duration vs performance <span>hold time → avg P&amp;L by bucket</span></div>
+      <div class="chart-wrap" style="height:220px"><canvas id="durationChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Entry time vs performance <span>SGT · each dot = 1 trade</span></div>
+      <div class="chart-wrap" style="height:220px"><canvas id="scatterChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    Data sourced via <span class="api-tag">⬡ broker api</span> — MT5 → HTML export → Python sync → Google Sheets &nbsp;·&nbsp; All figures in SGD
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════
+   CHART.JS DEFAULTS
+══════════════════════════════════════════ */
+Chart.defaults.font.family = "'JetBrains Mono', monospace";
+Chart.defaults.color = '#7a7670';
+const TOOLTIP = {
+  backgroundColor:'#f0ede8',borderColor:'#c8c5be',borderWidth:1,
+  titleColor:'#7a7670',bodyColor:'#2c2a26',
+  titleFont:{family:"'JetBrains Mono',monospace",size:10},
+  bodyFont:{family:"'JetBrains Mono',monospace",size:11},padding:9,
+};
+const GRID='rgba(44,42,38,0.07)', TICK='#b0ada6';
+
+/* ══════════════════════════════════════════
+   GOOGLE SHEETS DATA SOURCE
+   Sheet must be published as CSV:
+   File → Share → Publish to web → CSV
+   Paste the published URL below
+══════════════════════════════════════════ */
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRlwN1i_Y0SFs92ciQfmwWNBYy8ugMQIQ_50uGMXlGQR_1XeTYUBipTK99Jumun5FwNx5jLtlpoZLCi/pub?gid=205809442&single=true&output=csv';
+
+let ALL_TRADES = [];
+
+function parseSheetCSV(csvText){
+  const lines = csvText.trim().split('\n');
+  if(lines.length < 2) return [];
+  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g,''));
+  const trades = [];
+  for(let i = 1; i < lines.length; i++){
+    const vals = lines[i].split(',').map(v => v.trim().replace(/"/g,''));
+    if(vals.length < headers.length) continue;
+    const row = {};
+    headers.forEach((h,j) => row[h] = vals[j]);
+    // Skip rows missing required fields
+    if(!row.time_open || !row.net_pnl) continue;
+    try {
+    // Parse as local time by replacing space with T — prevents UTC interpretation
+    const localDateStr = row.time_open.replace(' ', 'T');
+    trades.push({
+        id:          i,
+        date:        new Date(localDateStr),
+        pnl:         parseFloat(row.net_pnl)  || 0,
+        isWin:       parseInt(row.is_win)  === 1,
+        entryHour:   parseFloat(row.entry_hour) || 0,
+        duration:    parseFloat(row.duration_min) || 0,
+        type:        (row.type || '').toLowerCase().trim(),
+      });
+    } catch(e){ continue; }
+  }
+  return trades;
+}
+
+async function fetchTradeData(){
+  // Show loading state
+  document.getElementById('syncLabel').textContent = 'syncing...';
+  try {
+    const res = await fetch(SHEET_CSV_URL + '&t=' + Date.now()); // cache-bust
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const csv = await res.text();
+    const trades = parseSheetCSV(csv);
+    if(!trades.length) throw new Error('No trades parsed');
+    const now = new Date();
+    document.getElementById('syncLabel').textContent =
+      'last sync: ' + now.getHours().toString().padStart(2,'0') + ':' +
+      now.getMinutes().toString().padStart(2,'0') + ' SGT';
+    document.getElementById('apiDot').style.background = 'var(--green)';
+    return trades;
+  } catch(e) {
+    console.error('Sheet fetch failed:', e);
+    document.getElementById('syncLabel').textContent = 'sync failed — check console';
+    document.getElementById('apiDot').style.background = 'var(--red)';
+    return [];
+  }
+}
+
+// Auto-refresh every 5 minutes
+setInterval(async () => {
+  ALL_TRADES = await fetchTradeData();
+  refresh();
+}, 5 * 60 * 1000);
+
+const STARTING_BALANCE = 1300; // SGD — account balance on first trade date
+
+// Use local date string to preserve SGT timezone from sync script
+function localDateKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+let activePeriod = 'all';
+let customFrom   = null;
+let customTo     = null;
+
+// Calendar always shows "current month" — separately navigable
+const today = new Date();
+let calYear  = today.getFullYear();
+let calMonth = today.getMonth();
+
+function getDateRange(period){
+  const now = new Date();
+  const y=now.getFullYear(), m=now.getMonth();
+  if(period==='this_month') return {from:new Date(y,m,1), to:new Date(y,m+1,0,23,59,59)};
+  if(period==='last_month') return {from:new Date(y,m-1,1), to:new Date(y,m,0,23,59,59)};
+  if(period==='ytd')        return {from:new Date(y,0,1), to:new Date(y,m+1,0,23,59,59)};
+  if(period==='all')        return {from:new Date('2000-01-01'), to:new Date('2099-12-31')};
+  if(period==='custom')     return {from:customFrom, to:customTo};
+  return {from:new Date('2000-01-01'), to:new Date('2099-12-31')};
+}
+
+function filterTrades(period){
+  const {from,to}=getDateRange(period);
+  if(!from||!to) return [];
+  return ALL_TRADES.filter(t=>t.date>=from && t.date<=to);
+}
+
+function periodLabel(period){
+  const {from,to}=getDateRange(period);
+  if(!from||!to) return '—';
+  const fmt=d=>d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  if(period==='all') return 'All time';
+  return fmt(from)+' – '+fmt(to);
+}
+
+/* ══════════════════════════════════════════
+   CHART INSTANCES (for destroy/rebuild)
+══════════════════════════════════════════ */
+let charts = {};
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+/* ══════════════════════════════════════════
+   MAIN REFRESH — called on every filter change
+══════════════════════════════════════════ */
+function refresh(){
+  const trades = filterTrades(activePeriod);
+  updatePeriodTag();
+  updateKPIs(trades);
+  buildEquityCurve(trades);
+  buildGrowthChart(trades);
+  buildWinRing(trades);
+  buildLongShortPie(trades);
+  buildDurationChart(trades);
+  buildScatterChart(trades);
+  buildCalendar();
+}
+
+/* ── Period tag ── */
+function updatePeriodTag(){
+  document.getElementById('periodTag').innerHTML =
+    'Showing: <strong>'+periodLabel(activePeriod)+'</strong>';
+  document.getElementById('chart-period-label').textContent =
+    periodLabel(activePeriod)+' · cumulative equity curve';
+}
+
+/* ══════════════════════════════════════════
+   KPI CALCULATIONS
+══════════════════════════════════════════ */
+function calcMetrics(trades){
+  if(!trades.length) return null;
+  const totalPnl  = trades.reduce((s,t)=>s+t.pnl,0);
+  const wins      = trades.filter(t=>t.isWin);
+  const losses    = trades.filter(t=>!t.isWin);
+  const winRate   = wins.length/trades.length;
+  const avgWin    = wins.length   ? wins.reduce((s,t)=>s+t.pnl,0)/wins.length     : 0;
+  const avgLoss   = losses.length ? Math.abs(losses.reduce((s,t)=>s+t.pnl,0)/losses.length) : 0;
+  const grossWin  = wins.reduce((s,t)=>s+t.pnl,0);
+  const grossLoss = Math.abs(losses.reduce((s,t)=>s+t.pnl,0));
+  const pf        = grossLoss>0 ? grossWin/grossLoss : Infinity;
+  const expectancy= winRate*avgWin - (1-winRate)*avgLoss;
+  const rrRealised= avgLoss>0 ? avgWin/avgLoss : 0;
+
+  // Long / short counts
+  const longTrades  = trades.filter(t=>t.type==='buy').length;
+  const shortTrades = trades.filter(t=>t.type==='sell').length;
+
+  // Daily P&L grouped by LOCAL date (preserves SGT)
+  const byDay={};
+  trades.forEach(t=>{const k=localDateKey(t.date);byDay[k]=(byDay[k]||0)+t.pnl;});
+  const sortedDays=Object.keys(byDay).sort();
+  const dayPnls=sortedDays.map(k=>byDay[k]);
+
+  // Sharpe/Sortino using daily % returns vs running equity (not fixed starting balance)
+  const n = sortedDays.length;
+  let runEq = STARTING_BALANCE;
+  const dayReturns = sortedDays.map(k => {
+    const ret = runEq > 0 ? byDay[k] / runEq * 100 : 0;
+    runEq += byDay[k];
+    return ret;
+  });
+  let sharpe = 0, sortino = 0;
+  if(n >= 5){
+    const meanR = dayReturns.reduce((s,v)=>s+v,0) / n;
+    const variance = dayReturns.reduce((s,v)=>s+(v-meanR)**2,0) / n;
+    const stdAll = Math.sqrt(variance);
+    const downR = dayReturns.filter(v=>v<0);
+    const stdDown = downR.length >= 2
+      ? Math.sqrt(downR.reduce((s,v)=>s+v**2,0) / downR.length)
+      : stdAll;
+    sharpe  = stdAll  > 0.0001 ? meanR / stdAll  * Math.sqrt(252) : 0;
+    sortino = stdDown > 0.0001 ? meanR / stdDown * Math.sqrt(252) : 0;
+  }
+
+  // Day win %
+  const winDays=sortedDays.filter(k=>byDay[k]>0).length;
+
+  // Max drawdown vs account equity (starting balance + cumulative P&L)
+  let peakEquity=STARTING_BALANCE, maxDD=0;
+  let cumPnl=0;
+  sortedDays.forEach(k=>{
+    cumPnl+=byDay[k];
+    const equity=STARTING_BALANCE+cumPnl;
+    if(equity>peakEquity) peakEquity=equity;
+    const dd=(equity-peakEquity)/peakEquity*100;
+    if(dd<maxDD) maxDD=dd;
+  });
+  const currentEquity=STARTING_BALANCE+totalPnl;
+  const curDD=(currentEquity-peakEquity)/peakEquity*100;
+  const accountGrowthPct=(currentEquity/STARTING_BALANCE-1)*100;
+
+  // Avg recovery
+  let runs=[],run=0;
+  sortedDays.forEach(k=>{if(byDay[k]<0)run++;else{if(run>0)runs.push(run);run=0;}});
+  if(run>0)runs.push(run);
+  const avgRecovery=runs.length?runs.reduce((s,v)=>s+v,0)/runs.length*1.5:0;
+
+  // Trades per month
+  const firstDate=trades[0].date,lastDate=trades[trades.length-1].date;
+  const months=Math.max(1,(lastDate-firstDate)/(1000*60*60*24*30));
+  const tradesPerMonth=Math.round(trades.length/months);
+
+  return{totalPnl,winRate,wins:wins.length,losses:losses.length,total:trades.length,
+    avgWin,avgLoss,grossWin,grossLoss,pf,expectancy,rrRealised,
+    sharpe,sortino,winDays,totalDays:sortedDays.length,maxDD,curDD,avgRecovery,
+    tradesPerMonth,longTrades,shortTrades,accountGrowthPct,currentEquity};
+}
+
+function fmt$(n){return(n>=0?'+S$':'-S$')+Math.abs(Math.round(n)).toLocaleString();}
+function fmtPct(n){return(n>=0?'+':'')+n.toFixed(1)+'%';}
+
+function updateKPIs(trades){
+  const m=calcMetrics(trades);
+  if(!m){
+    ['kpi-pnl','kpi-ror','kpi-daywin','kpi-daywin-sub','kpi-pf','kpi-sharpe',
+     'kpi-sharpe-badge','kpi-sortino','ring-pct','ring-wins','ring-losses','ring-total',
+     'awl-win-val','awl-loss-val','awl-ratio','exp-val','exp-formula','exp-monthly','exp-n',
+     'rr-realised','rr-leak','kpi-dd','kpi-dd-sub','kpi-cur-dd','kpi-recovery']
+    .forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='No data';});
+    return;
+  }
+
+  // P&L
+  const pnlEl=document.getElementById('kpi-pnl');
+  pnlEl.textContent=fmt$(m.totalPnl);
+  pnlEl.className='card-value '+(m.totalPnl>=0?'green':'red');
+  document.getElementById('kpi-ror').innerHTML=
+    'Account growth: <span class="'+(m.accountGrowthPct>=0?'up':'dn')+'">'+fmtPct(m.accountGrowthPct)+'</span> · S$'+Math.round(m.currentEquity).toLocaleString();
+
+  // Day win
+  const dwPct=(m.winDays/m.totalDays*100).toFixed(1);
+  document.getElementById('kpi-daywin').textContent=dwPct+'%';
+  document.getElementById('kpi-daywin-sub').textContent=m.winDays+' win days / '+m.totalDays+' total days';
+
+  // Profit factor
+  const pfVal=isFinite(m.pf)?m.pf.toFixed(2):'∞';
+  document.getElementById('kpi-pf').textContent=pfVal;
+  const pfPct=isFinite(m.pf)?Math.min(m.pf/3*100,100):100;
+  document.getElementById('pf-fill').style.width=pfPct+'%';
+
+  // Sharpe
+  document.getElementById('kpi-sharpe').textContent = m.sharpe === 0 && m.totalDays < 5 ? 'N/A' : m.sharpe.toFixed(2);
+  const shBadge=document.getElementById('kpi-sharpe-badge');
+  if(m.sharpe === 0 && m.totalDays < 5){
+    shBadge.textContent='insufficient data (need 5+ days)';
+    shBadge.style.background='var(--bg3)';
+    shBadge.style.color='var(--text3)';
+    shBadge.style.borderColor='var(--border)';
+  } else {
+    shBadge.textContent=m.sharpe>=1?'above benchmark 1.0':'below benchmark 1.0';
+    shBadge.style.background=m.sharpe>=1?'var(--teal-dim)':'var(--red-dim)';
+    shBadge.style.color=m.sharpe>=1?'var(--teal)':'var(--red)';
+    shBadge.style.borderColor=m.sharpe>=1?'rgba(46,74,90,0.2)':'rgba(122,46,46,0.2)';
+  }
+  document.getElementById('kpi-sortino').textContent='Sortino: '+(m.sharpe===0&&m.totalDays<5?'N/A':m.sortino.toFixed(2));
+
+  // Win ring
+  const wrPct=Math.round(m.winRate*100);
+  document.getElementById('ring-pct').textContent=wrPct+'%';
+  document.getElementById('ring-wins').textContent=m.wins;
+  document.getElementById('ring-losses').textContent=m.losses;
+  document.getElementById('ring-total').textContent=m.total;
+
+  // Avg win/loss bars
+  const maxBar=Math.max(m.avgWin,m.avgLoss)||1;
+  document.getElementById('awl-win-val').textContent='+S$'+Math.round(m.avgWin);
+  document.getElementById('awl-loss-val').textContent='−S$'+Math.round(m.avgLoss);
+  const winBar=document.getElementById('awl-win-bar');
+  const lossBar=document.getElementById('awl-loss-bar');
+  winBar.style.width=(m.avgWin/maxBar*90)+'%'; winBar.textContent='S$'+Math.round(m.avgWin);
+  lossBar.style.width=(m.avgLoss/maxBar*90)+'%'; lossBar.textContent='S$'+Math.round(m.avgLoss);
+  const ratio=(m.avgLoss>0?m.avgWin/m.avgLoss:0).toFixed(2);
+  document.getElementById('awl-ratio').innerHTML=
+    'Ratio: <strong style="color:var(--accent)">'+ratio+' : 1</strong>&nbsp;·&nbsp;'+(parseFloat(ratio)>=1?'Favourable ✓':'Unfavourable ✗');
+
+  // Expectancy
+  const expColor=m.expectancy>=0?'var(--green)':'var(--red)';
+  document.getElementById('exp-val').style.color=expColor;
+  document.getElementById('exp-val').textContent=fmt$(m.expectancy);
+  document.getElementById('exp-formula').textContent=
+    '('+Math.round(m.winRate*100)+'% × S$'+Math.round(m.avgWin)+') − ('+Math.round((1-m.winRate)*100)+'% × S$'+Math.round(m.avgLoss)+')';
+  document.getElementById('exp-n').textContent=m.tradesPerMonth;
+  const monthly=m.expectancy*m.tradesPerMonth;
+  document.getElementById('exp-monthly').textContent=fmt$(monthly);
+  document.getElementById('exp-monthly').style.color=monthly>=0?'var(--accent)':'var(--red)';
+
+  // R:R
+  document.getElementById('rr-realised').textContent=m.rrRealised.toFixed(2)+' : 1';
+  const leak=m.rrRealised-plannedRR;
+  document.getElementById('rr-leak').textContent=(leak>=0?'+':'')+leak.toFixed(2)+' vs planned '+plannedRR.toFixed(1);
+  document.getElementById('rr-leak').style.color=leak>=0?'var(--green)':'var(--red)';
+
+  // Drawdown
+  document.getElementById('kpi-dd').textContent=Math.abs(m.maxDD).toFixed(2)+'%';
+  const ddAmt=Math.abs(m.maxDD/100*peakFromTrades(trades));
+  document.getElementById('kpi-dd-sub').innerHTML='Peak-to-trough · <span class="dn">−S$'+Math.round(ddAmt).toLocaleString()+'</span>';
+  document.getElementById('kpi-cur-dd').textContent=m.curDD.toFixed(2)+'%';
+  document.getElementById('kpi-recovery').textContent=m.avgRecovery.toFixed(1)+' days';
+}
+
+function peakFromTrades(trades){
+  const byDay={};
+  trades.forEach(t=>{const k=localDateKey(t.date);byDay[k]=(byDay[k]||0)+t.pnl;});
+  let peak=STARTING_BALANCE,cum=0;
+  Object.keys(byDay).sort().forEach(k=>{cum+=byDay[k];const eq=STARTING_BALANCE+cum;if(eq>peak)peak=eq;});
+  return peak;
+}
+
+/* ══════════════════════════════════════════
+   EQUITY CURVE — account balance (S$)
+══════════════════════════════════════════ */
+function buildEquityCurve(trades){
+  destroyChart('pnl');
+  const byDay={};
+  trades.forEach(t=>{const k=localDateKey(t.date);byDay[k]=(byDay[k]||0)+t.pnl;});
+  const days=Object.keys(byDay).sort();
+  let balance=STARTING_BALANCE;
+  const labels=[],data=[];
+  days.forEach((d,i)=>{
+    balance+=byDay[d];
+    labels.push(i%5===0?d.slice(5):'');
+    data.push(parseFloat(balance.toFixed(2)));
+  });
+  const ctx=document.getElementById('pnlChart').getContext('2d');
+  const color=balance>=STARTING_BALANCE?'#3d5a4a':'#7a2e2e';
+  const grad=ctx.createLinearGradient(0,0,0,200);
+  grad.addColorStop(0,balance>=STARTING_BALANCE?'rgba(61,90,74,0.20)':'rgba(122,46,46,0.15)');
+  grad.addColorStop(1,'rgba(61,90,74,0.01)');
+  charts['pnl']=new Chart(ctx,{
+    type:'line',
+    data:{labels,datasets:[{data,borderColor:color,borderWidth:1.5,pointRadius:0,fill:true,backgroundColor:grad,tension:0.3}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{...TOOLTIP,callbacks:{label:c=>'S$'+c.parsed.y.toLocaleString()}}},
+      scales:{
+        x:{grid:{color:GRID},ticks:{color:TICK,font:{size:9},maxRotation:0}},
+        y:{grid:{color:GRID},ticks:{color:TICK,font:{size:9},callback:v=>'S$'+v.toLocaleString()}}
+      }
+    }
+  });
+}
+
+/* ══════════════════════════════════════════
+   GROWTH % CHART
+══════════════════════════════════════════ */
+function buildGrowthChart(trades){
+  destroyChart('growth');
+  const byDay={};
+  trades.forEach(t=>{const k=localDateKey(t.date);byDay[k]=(byDay[k]||0)+t.pnl;});
+  const days=Object.keys(byDay).sort();
+  let balance=STARTING_BALANCE;
+  const labels=[],data=[];
+  days.forEach((d,i)=>{
+    balance+=byDay[d];
+    labels.push(i%5===0?d.slice(5):'');
+    data.push(parseFloat(((balance/STARTING_BALANCE-1)*100).toFixed(2)));
+  });
+  const finalGrowth=data[data.length-1]||0;
+  const color=finalGrowth>=0?'#3d5a4a':'#7a2e2e';
+  const ctx=document.getElementById('growthChart').getContext('2d');
+  const grad=ctx.createLinearGradient(0,0,0,200);
+  grad.addColorStop(0,finalGrowth>=0?'rgba(61,90,74,0.20)':'rgba(122,46,46,0.15)');
+  grad.addColorStop(1,'rgba(61,90,74,0.01)');
+  charts['growth']=new Chart(ctx,{
+    type:'line',
+    data:{labels,datasets:[{data,borderColor:color,borderWidth:1.5,pointRadius:0,fill:true,backgroundColor:grad,tension:0.3}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{...TOOLTIP,callbacks:{label:c=>c.parsed.y.toFixed(2)+'%'}}},
+      scales:{
+        x:{grid:{color:GRID},ticks:{color:TICK,font:{size:9},maxRotation:0}},
+        y:{grid:{color:GRID},ticks:{color:TICK,font:{size:9},callback:v=>v+'%'}}
+      }
+    }
+  });
+}
+
+/* ══════════════════════════════════════════
+   WIN RATE RING
+══════════════════════════════════════════ */
+function buildWinRing(trades){
+  destroyChart('ring');
+  const wins=trades.filter(t=>t.isWin).length;
+  const total=trades.length||1;
+  const winPct=Math.round(wins/total*100);
+  charts['ring']=new Chart(document.getElementById('winRateRing').getContext('2d'),{
+    type:'doughnut',
+    data:{datasets:[{data:[winPct,100-winPct],backgroundColor:['#3d5a4a','#dbd8d2'],borderWidth:0,borderRadius:3}]},
+    options:{cutout:'72%',responsive:false,plugins:{legend:{display:false},tooltip:{enabled:false}},animation:{duration:700,easing:'easeOutQuart'}}
+  });
+}
+
+/* ══════════════════════════════════════════
+   LONG / SHORT PIE
+══════════════════════════════════════════ */
+function buildLongShortPie(trades){
+  destroyChart('longshort');
+  const longs=trades.filter(t=>t.type==='buy').length;
+  const shorts=trades.filter(t=>t.type==='sell').length;
+  const total=longs+shorts||1;
+  document.getElementById('ls-long-pct').textContent=Math.round(longs/total*100)+'%';
+  document.getElementById('ls-short-pct').textContent=Math.round(shorts/total*100)+'%';
+  document.getElementById('ls-long-n').textContent=longs+' trades';
+  document.getElementById('ls-short-n').textContent=shorts+' trades';
+  charts['longshort']=new Chart(document.getElementById('longShortPie').getContext('2d'),{
+    type:'doughnut',
+    data:{
+      labels:['Long','Short'],
+      datasets:[{data:[longs,shorts],backgroundColor:['#3d5a4a','#7a2e2e'],borderWidth:0,borderRadius:3}]
+    },
+    options:{cutout:'65%',responsive:false,
+      plugins:{legend:{display:false},tooltip:{...TOOLTIP,callbacks:{label:c=>c.label+': '+c.raw+' ('+Math.round(c.raw/total*100)+'%)'}}}
+    }
+  });
+}
+function buildCalendar(){
+  const byDay={};
+  ALL_TRADES.forEach(t=>{
+    if(t.date.getFullYear()===calYear&&t.date.getMonth()===calMonth){
+      const d=t.date.getDate();
+      if(!byDay[d])byDay[d]={pnl:0,trades:0,wins:0};
+      byDay[d].pnl+=t.pnl;byDay[d].trades++;if(t.isWin)byDay[d].wins++;
+    }
+  });
+
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('calMonthTitle').textContent=months[calMonth]+' '+calYear;
+
+  const grid=document.getElementById('calGrid');
+  grid.innerHTML='';
+
+  // Headers: Mon–Sun + Week
+  ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(h=>{
+    const el=document.createElement('div');el.className='cal-day-hdr';el.textContent=h;grid.appendChild(el);
+  });
+  const wkHdr=document.createElement('div');wkHdr.className='cal-week-hdr';wkHdr.textContent='Week';grid.appendChild(wkHdr);
+
+  const firstDow=new Date(calYear,calMonth,1).getDay(); // 0=Sun
+  const offset=firstDow===0?6:firstDow-1;              // convert to Mon=0
+  const dim=new Date(calYear,calMonth+1,0).getDate();
+
+  // Track weekly totals
+  let weekPnl=0, weekTrades=0, weekWins=0;
+  let colPos=offset; // current column position in the 7-col week (0=Mon)
+
+  // Add empty offset cells
+  for(let i=0;i<offset;i++){
+    const el=document.createElement('div');el.className='cal-cell empty';grid.appendChild(el);
+    colPos++;
+  }
+
+  for(let d=1;d<=dim;d++){
+    const dow=new Date(calYear,calMonth,d).getDay(); // 0=Sun,1=Mon,...
+    const colIdx=dow===0?6:dow-1;                    // Mon=0,...,Sun=6
+    const info=byDay[d];
+    const isWeekend=dow===0||dow===6;
+
+    // Day cell
+    const el=document.createElement('div');
+    el.className=(!info||isWeekend)?'cal-cell flat':'cal-cell '+(info.pnl>=0?'win':'loss');
+    const numEl=document.createElement('div');numEl.className='cal-num';numEl.textContent=d;el.appendChild(numEl);
+    if(info&&!isWeekend){
+      const pEl=document.createElement('div');pEl.className='cal-pnl '+(info.pnl>=0?'pos':'neg');
+      pEl.textContent=(info.pnl>=0?'+':'')+'S$'+Math.round(info.pnl);el.appendChild(pEl);
+      const tEl=document.createElement('div');tEl.className='cal-trades';tEl.textContent=info.trades+' trades';el.appendChild(tEl);
+      const wEl=document.createElement('div');wEl.className='cal-wr';wEl.textContent=Math.round(info.wins/info.trades*100)+'% wr';el.appendChild(wEl);
+      weekPnl+=info.pnl;weekTrades+=info.trades;weekWins+=info.wins;
+    }
+    grid.appendChild(el);
+
+    // After Sunday (colIdx===6) or last day of month — insert weekly summary
+    if(colIdx===6||d===dim){
+      const wk=document.createElement('div');wk.className='cal-week-cell';
+      const lEl=document.createElement('div');lEl.className='cal-week-label';lEl.textContent='total';wk.appendChild(lEl);
+      if(weekTrades>0){
+        const pEl=document.createElement('div');pEl.className='cal-week-pnl '+(weekPnl>=0?'pos':'neg');
+        pEl.textContent=(weekPnl>=0?'+':'')+'S$'+Math.round(weekPnl);wk.appendChild(pEl);
+        const tEl=document.createElement('div');tEl.className='cal-week-trades';tEl.textContent=weekTrades+' trades';wk.appendChild(tEl);
+        const wrEl=document.createElement('div');wrEl.className='cal-week-wr';wrEl.textContent=Math.round(weekWins/weekTrades*100)+'% wr';wk.appendChild(wrEl);
+      }
+      grid.appendChild(wk);
+      weekPnl=0;weekTrades=0;weekWins=0;
+
+      // If last day of month but not Sunday, fill remaining day cells
+      if(d===dim&&colIdx!==6){
+        for(let fill=colIdx+1;fill<=6;fill++){
+          const empty=document.createElement('div');empty.className='cal-cell empty';grid.appendChild(empty);
+        }
+      }
+    }
+  }
+}
+
+function shiftCalMonth(dir){
+  calMonth+=dir;
+  if(calMonth>11){calMonth=0;calYear++;}
+  if(calMonth<0){calMonth=11;calYear--;}
+  buildCalendar();
+}
+
+/* ══════════════════════════════════════════
+   DURATION CHART
+══════════════════════════════════════════ */
+function buildDurationChart(trades){
+  destroyChart('duration');
+  const buckets=[
+    {l:'0–5m',min:0,max:5},{l:'5–15m',min:5,max:15},
+    {l:'15–30m',min:15,max:30},{l:'30–45m',min:30,max:45},
+    {l:'45–60m',min:45,max:60},{l:'60m+',min:60,max:Infinity}
+  ];
+  const res=buckets.map(b=>{
+    const sub=trades.filter(t=>t.duration>=b.min&&t.duration<b.max);
+    return{label:b.l,avg:sub.length?Math.round(sub.reduce((s,t)=>s+t.pnl,0)/sub.length):null,
+      wr:sub.length?Math.round(sub.filter(t=>t.isWin).length/sub.length*100):0,n:sub.length};
+  });
+  charts['duration']=new Chart(document.getElementById('durationChart').getContext('2d'),{
+    type:'bar',
+    data:{labels:res.map(r=>r.label),datasets:[{
+      data:res.map(r=>r.avg),
+      backgroundColor:res.map(r=>r.avg==null?'transparent':r.avg>=0?'rgba(61,90,74,0.75)':'rgba(122,46,46,0.70)'),
+      borderRadius:4,borderSkipped:false
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{...TOOLTIP,callbacks:{label:c=>{const r=res[c.dataIndex];if(r.n===0)return'No trades';return[`Avg P&L: S$${r.avg}`,`Win rate: ${r.wr}%`,`Trades: ${r.n}`];}}}},
+      scales:{x:{grid:{display:false},ticks:{color:TICK,font:{size:10}}},y:{grid:{color:GRID},ticks:{color:TICK,font:{size:10},callback:v=>'S$'+v}}}
+    }
+  });
+}
+
+/* ══════════════════════════════════════════
+   SCATTER CHART
+══════════════════════════════════════════ */
+function buildScatterChart(trades){
+  destroyChart('scatter');
+  const wins=trades.filter(t=>t.isWin).map(t=>({x:t.entryHour,y:t.pnl}));
+  const loss=trades.filter(t=>!t.isWin).map(t=>({x:t.entryHour,y:t.pnl}));
+  const allHours=trades.map(t=>t.entryHour);
+  const minH=allHours.length?Math.floor(Math.min(...allHours)):0;
+  const maxH=allHours.length?Math.ceil(Math.max(...allHours)):24;
+  charts['scatter']=new Chart(document.getElementById('scatterChart').getContext('2d'),{
+    type:'scatter',
+    data:{datasets:[
+      {label:'Win', data:wins,backgroundColor:'rgba(61,90,74,0.45)', pointRadius:3,pointHoverRadius:5},
+      {label:'Loss',data:loss,backgroundColor:'rgba(122,46,46,0.45)',pointRadius:3,pointHoverRadius:5},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,labels:{color:'#7a7670',font:{size:10},boxWidth:10,usePointStyle:true}},
+        tooltip:{...TOOLTIP,callbacks:{label:c=>{const h=Math.floor(c.parsed.x),m=Math.round((c.parsed.x-h)*60);return`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} SGT · S$${c.parsed.y}`;}}}
+      },
+      scales:{
+        x:{grid:{color:GRID},ticks:{color:TICK,font:{size:9},callback:v=>{const h=Math.round(v);return Number.isInteger(v)&&h%1===0?h+':00':'';}},title:{display:true,text:'Entry time (SGT)',color:TICK,font:{size:9}},min:minH,max:maxH},
+        y:{grid:{color:GRID},ticks:{color:TICK,font:{size:9},callback:v=>'S$'+v},title:{display:true,text:'P&L (S$)',color:TICK,font:{size:9}}}
+      }
+    }
+  });
+}
+
+/* ══════════════════════════════════════════
+   FILTER CONTROLS
+══════════════════════════════════════════ */
+function setPeriod(period){
+  activePeriod=period;
+  document.querySelectorAll('.pill').forEach(p=>p.classList.toggle('active',p.dataset.period===period));
+  const cr=document.getElementById('customRange');
+  cr.classList.toggle('visible',period==='custom');
+  if(period!=='custom') refresh();
+}
+
+function applyCustom(){
+  const from=document.getElementById('dateFrom').value;
+  const to=document.getElementById('dateTo').value;
+  if(!from||!to){alert('Please select both a start and end date.');return;}
+  customFrom=new Date(from);
+  customTo=new Date(to+'T23:59:59');
+  if(customFrom>customTo){alert('Start date must be before end date.');return;}
+  refresh();
+}
+
+/* ══════════════════════════════════════════
+   PLANNED R:R — editable
+══════════════════════════════════════════ */
+let plannedRR = 1.6;
+
+function startEditRR(){
+  document.getElementById('rr-display').style.display='none';
+  document.getElementById('rr-edit-hint').style.display='none';
+  document.getElementById('rr-planned-sub').style.display='none';
+  const wrap=document.getElementById('rr-edit-wrap');
+  wrap.style.display='flex';
+  const inp=document.getElementById('rr-input');
+  inp.value=plannedRR;
+  inp.focus();inp.select();
+}
+
+function commitRR(){
+  const inp=document.getElementById('rr-input');
+  const val=parseFloat(inp.value);
+  if(!isNaN(val)&&val>0) plannedRR=Math.round(val*10)/10;
+  document.getElementById('planned-rr-val').textContent=plannedRR.toFixed(1)+' : 1';
+  document.getElementById('rr-edit-wrap').style.display='none';
+  document.getElementById('rr-edit-hint').style.display='';
+  document.getElementById('rr-planned-sub').style.display='';
+  document.getElementById('rr-display').style.display='flex';
+  // Recalculate leak with new planned value
+  const leakEl=document.getElementById('rr-leak');
+  const realisedText=document.getElementById('rr-realised').textContent;
+  const realisedVal=parseFloat(realisedText);
+  if(!isNaN(realisedVal)){
+    const leak=realisedVal-plannedRR;
+    leakEl.textContent=(leak>=0?'+':'')+leak.toFixed(2)+' vs planned '+plannedRR.toFixed(1);
+    leakEl.style.color=leak>=0?'var(--green)':'var(--red)';
+  }
+}
+
+function handleRRKey(e){
+  if(e.key==='Enter') document.getElementById('rr-input').blur();
+  if(e.key==='Escape'){ document.getElementById('rr-input').value=plannedRR; document.getElementById('rr-input').blur(); }
+}
+// Set default custom date inputs to this month
+const now=new Date();
+const y=now.getFullYear(),mo=String(now.getMonth()+1).padStart(2,'0');
+document.getElementById('dateFrom').value=`${y}-${mo}-01`;
+document.getElementById('dateTo').value=`${y}-${mo}-${String(new Date(y,now.getMonth()+1,0).getDate()).padStart(2,'0')}`;
+
+// Init — fetch live data then render
+(async () => {
+  ALL_TRADES = await fetchTradeData();
+  refresh();
+})();
+</script>
+</body>
+</html>
