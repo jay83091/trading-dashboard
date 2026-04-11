@@ -179,7 +179,23 @@
   .cal-trades{font-size:11px;font-family:var(--mono);color:var(--text3);text-align:center;}
   .cal-wr{font-size:11px;font-family:var(--mono);color:var(--text2);text-align:center;}
 
-  .chart-wrap{position:relative;width:100%;}
+  /* ── Withdrawals ── */
+  .withdrawal-panel{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;}
+  .withdrawal-panel-title{font-size:10px;font-family:var(--mono);font-weight:600;color:var(--text2);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;}
+  .withdrawal-form{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .withdrawal-input{font-family:var(--mono);font-size:13px;color:var(--text);background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;outline:none;transition:border-color 0.15s;}
+  .withdrawal-input:focus{border-color:var(--accent);}
+  .withdrawal-input[type="date"]{width:140px;}
+  .withdrawal-input[type="number"]{width:110px;}
+  .withdrawal-add-btn{font-family:var(--mono);font-size:11px;font-weight:600;padding:6px 14px;border-radius:6px;cursor:pointer;background:var(--accent);border:none;color:var(--bg2);transition:all 0.15s;}
+  .withdrawal-add-btn:hover{filter:brightness(1.1);}
+  .withdrawal-list{display:flex;flex-direction:column;gap:5px;margin-top:10px;}
+  .withdrawal-item{display:flex;align-items:center;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--text2);background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:5px 10px;}
+  .withdrawal-item-amt{color:var(--red);font-weight:600;}
+  .withdrawal-del{background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:0 2px;transition:color 0.12s;}
+  .withdrawal-del:hover{color:var(--red);}
+  .withdrawal-total{font-family:var(--mono);font-size:11px;color:var(--text2);margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;justify-content:space-between;}
+  .withdrawal-total span{color:var(--red);font-weight:600;}
   canvas{display:block;}
 
   /* ── No data state ── */
@@ -253,10 +269,17 @@
       <div class="pf-ticks"><span>0</span><span>1.0</span><span>1.5</span><span>2.0</span><span>3.0+</span></div>
     </div>
     <div class="card">
-      <div class="card-label">Sharpe Ratio</div>
-      <div class="card-value teal" id="kpi-sharpe">—</div>
-      <div class="sharpe-badge" id="kpi-sharpe-badge">—</div>
-      <div class="card-sub" id="kpi-sortino" style="margin-top:8px">—</div>
+      <div class="card-label">Daily P&amp;L Stats</div>
+      <div class="card-value teal" id="kpi-avg-daily">—</div>
+      <div class="card-sub" id="kpi-avg-daily-sub" style="margin-bottom:8px">avg per trading day</div>
+      <div class="metric-block" style="margin-top:4px">
+        <div class="metric-block-label">Best day</div>
+        <div class="metric-block-value" id="kpi-best-day" style="color:var(--green);font-size:16px">—</div>
+      </div>
+      <div class="metric-block" style="margin-top:6px">
+        <div class="metric-block-label">Worst day</div>
+        <div class="metric-block-value" id="kpi-worst-day" style="color:var(--red);font-size:16px">—</div>
+      </div>
     </div>
   </div>
 
@@ -373,6 +396,30 @@
   <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:start;">
     <div class="card">
       <div class="card-title">Account balance <span id="chart-period-label">Equity curve · S$</span></div>
+
+      <!-- Withdrawal entry panel -->
+      <div class="withdrawal-panel">
+        <div class="withdrawal-panel-title">Withdrawals</div>
+        <div class="withdrawal-form">
+          <input type="date" class="withdrawal-input" id="w-date">
+          <input type="number" class="withdrawal-input" id="w-amount" placeholder="Amount (S$)" min="0" step="0.01">
+          <button class="withdrawal-add-btn" onclick="addWithdrawal()">+ Add</button>
+        </div>
+        <div class="withdrawal-list" id="w-list"></div>
+        <div class="withdrawal-total" id="w-total" style="display:none">
+          Total withdrawn: <span id="w-total-val">—</span>
+        </div>
+      </div>
+
+      <!-- Two-line equity chart -->
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:5px;font-size:10px;font-family:var(--mono);color:var(--text2);">
+          <div style="width:20px;height:2px;background:#3d5a4a;border-radius:1px;"></div> Account balance
+        </div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:10px;font-family:var(--mono);color:var(--text2);">
+          <div style="width:20px;height:2px;background:#2e4a5a;border-radius:1px;border-top:1.5px dashed #2e4a5a;"></div> Cumulative P&amp;L
+        </div>
+      </div>
       <div class="chart-wrap" style="height:200px"><canvas id="pnlChart"></canvas></div>
     </div>
     <div class="card">
@@ -387,6 +434,11 @@
         <div class="metric-block-label">Current drawdown</div>
         <div class="metric-block-value" id="kpi-cur-dd" style="color:var(--amber);font-size:18px">—</div>
         <div class="metric-block-sub">from last equity peak</div>
+      </div>
+      <div class="metric-block" style="margin-top:8px">
+        <div class="metric-block-label">Total withdrawn</div>
+        <div class="metric-block-value" id="kpi-total-withdrawn" style="color:var(--amber);font-size:18px">S$0</div>
+        <div class="metric-block-sub">transferred out of account</div>
       </div>
       <div class="metric-block" style="margin-top:8px">
         <div class="metric-block-label">Avg recovery time</div>
@@ -462,15 +514,14 @@ function parseSheetCSV(csvText){
     // Skip rows missing required fields
     if(!row.time_open || !row.net_pnl) continue;
     try {
-    // Parse as local time by replacing space with T — prevents UTC interpretation
-    const localDateStr = row.time_open.replace(' ', 'T');
-    trades.push({
+      const localDateStr = row.time_open.replace(' ', 'T');
+      trades.push({
         id:          i,
         date:        new Date(localDateStr),
-        pnl:         parseFloat(row.net_pnl)  || 0,
+        pnl:         Number(parseFloat(row.net_pnl).toFixed(2)) || 0,
         isWin:       parseInt(row.is_win)  === 1,
-        entryHour:   parseFloat(row.entry_hour) || 0,
-        duration:    parseFloat(row.duration_min) || 0,
+        entryHour:   Number(parseFloat(row.entry_hour).toFixed(4)) || 0,
+        duration:    Number(parseFloat(row.duration_min).toFixed(2)) || 0,
         type:        (row.type || '').toLowerCase().trim(),
       });
     } catch(e){ continue; }
@@ -646,15 +697,31 @@ function calcMetrics(trades){
   if(run>0)runs.push(run);
   const avgRecovery=runs.length?runs.reduce((s,v)=>s+v,0)/runs.length*1.5:0;
 
+  // Daily P&L stats (replaces Sharpe)
+  const avgDailyPnl  = dayPnls.length ? dayPnls.reduce((s,v)=>s+v,0)/dayPnls.length : 0;
+  const bestDay      = dayPnls.length ? Math.max(...dayPnls) : 0;
+  const worstDay     = dayPnls.length ? Math.min(...dayPnls) : 0;
+  const dailyStdDev  = dayPnls.length > 1
+    ? Math.sqrt(dayPnls.reduce((s,v)=>s+(v-avgDailyPnl)**2,0)/dayPnls.length)
+    : 0;
+
   // Trades per month
   const firstDate=trades[0].date,lastDate=trades[trades.length-1].date;
   const months=Math.max(1,(lastDate-firstDate)/(1000*60*60*24*30));
   const tradesPerMonth=Math.round(trades.length/months);
 
+  // Debug: log drawdown trace to console
+  console.table(sortedDays.map(k=>{
+    const cum=sortedDays.slice(0,sortedDays.indexOf(k)+1).reduce((s,d)=>s+byDay[d],0);
+    return{date:k,dayPnl:Math.round(byDay[k]*100)/100,equity:Math.round((STARTING_BALANCE+cum)*100)/100};
+  }));
+  console.log('maxDD:',maxDD,'curDD:',curDD,'peakEquity:',peakEquity);
+
   return{totalPnl,winRate,wins:wins.length,losses:losses.length,total:trades.length,
     avgWin,avgLoss,grossWin,grossLoss,pf,expectancy,rrRealised,
     sharpe,sortino,winDays,totalDays:sortedDays.length,maxDD,curDD,avgRecovery,
-    tradesPerMonth,longTrades,shortTrades,accountGrowthPct,currentEquity};
+    tradesPerMonth,longTrades,shortTrades,accountGrowthPct,currentEquity,
+    avgDailyPnl,bestDay,worstDay,dailyStdDev};
 }
 
 function fmt$(n){return(n>=0?'+S$':'-S$')+Math.abs(Math.round(n)).toLocaleString();}
@@ -663,8 +730,9 @@ function fmtPct(n){return(n>=0?'+':'')+n.toFixed(1)+'%';}
 function updateKPIs(trades){
   const m=calcMetrics(trades);
   if(!m){
-    ['kpi-pnl','kpi-ror','kpi-daywin','kpi-daywin-sub','kpi-pf','kpi-sharpe',
-     'kpi-sharpe-badge','kpi-sortino','ring-pct','ring-wins','ring-losses','ring-total',
+    ['kpi-pnl','kpi-ror','kpi-daywin','kpi-daywin-sub','kpi-pf',
+     'kpi-avg-daily','kpi-avg-daily-sub','kpi-best-day','kpi-worst-day',
+     'ring-pct','ring-wins','ring-losses','ring-total',
      'awl-win-val','awl-loss-val','awl-ratio','exp-val','exp-formula','exp-monthly','exp-n',
      'rr-realised','rr-leak','kpi-dd','kpi-dd-sub','kpi-cur-dd','kpi-recovery']
     .forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='No data';});
@@ -689,21 +757,14 @@ function updateKPIs(trades){
   const pfPct=isFinite(m.pf)?Math.min(m.pf/3*100,100):100;
   document.getElementById('pf-fill').style.width=pfPct+'%';
 
-  // Sharpe
-  document.getElementById('kpi-sharpe').textContent = m.sharpe === 0 && m.totalDays < 5 ? 'N/A' : m.sharpe.toFixed(2);
-  const shBadge=document.getElementById('kpi-sharpe-badge');
-  if(m.sharpe === 0 && m.totalDays < 5){
-    shBadge.textContent='insufficient data (need 5+ days)';
-    shBadge.style.background='var(--bg3)';
-    shBadge.style.color='var(--text3)';
-    shBadge.style.borderColor='var(--border)';
-  } else {
-    shBadge.textContent=m.sharpe>=1?'above benchmark 1.0':'below benchmark 1.0';
-    shBadge.style.background=m.sharpe>=1?'var(--teal-dim)':'var(--red-dim)';
-    shBadge.style.color=m.sharpe>=1?'var(--teal)':'var(--red)';
-    shBadge.style.borderColor=m.sharpe>=1?'rgba(46,74,90,0.2)':'rgba(122,46,46,0.2)';
-  }
-  document.getElementById('kpi-sortino').textContent='Sortino: '+(m.sharpe===0&&m.totalDays<5?'N/A':m.sortino.toFixed(2));
+  // Daily P&L stats
+  const avgDEl = document.getElementById('kpi-avg-daily');
+  avgDEl.textContent = fmt$(m.avgDailyPnl);
+  avgDEl.className = 'card-value '+(m.avgDailyPnl>=0?'teal':'red');
+  document.getElementById('kpi-avg-daily-sub').textContent =
+    'avg per day · S$'+Math.round(m.dailyStdDev)+' std dev';
+  document.getElementById('kpi-best-day').textContent  = '+S$'+Math.round(m.bestDay).toLocaleString();
+  document.getElementById('kpi-worst-day').textContent = '−S$'+Math.abs(Math.round(m.worstDay)).toLocaleString();
 
   // Win ring
   const wrPct=Math.round(m.winRate*100);
@@ -741,11 +802,13 @@ function updateKPIs(trades){
   document.getElementById('rr-leak').textContent=(leak>=0?'+':'')+leak.toFixed(2)+' vs planned '+plannedRR.toFixed(1);
   document.getElementById('rr-leak').style.color=leak>=0?'var(--green)':'var(--red)';
 
-  // Drawdown
-  document.getElementById('kpi-dd').textContent=Math.abs(m.maxDD).toFixed(2)+'%';
-  const ddAmt=Math.abs(m.maxDD/100*peakFromTrades(trades));
+  // Drawdown — guard against negative zero and floating point artifacts
+  const maxDDval  = Math.abs(m.maxDD)  < 0.01 ? 0 : m.maxDD;
+  const curDDval  = Math.abs(m.curDD)  < 0.01 ? 0 : m.curDD;
+  document.getElementById('kpi-dd').textContent = Math.abs(maxDDval).toFixed(2)+'%';
+  const ddAmt=Math.abs(maxDDval/100*peakFromTrades(trades));
   document.getElementById('kpi-dd-sub').innerHTML='Peak-to-trough · <span class="dn">−S$'+Math.round(ddAmt).toLocaleString()+'</span>';
-  document.getElementById('kpi-cur-dd').textContent=m.curDD.toFixed(2)+'%';
+  document.getElementById('kpi-cur-dd').textContent=(curDDval<=0?'':'+')+(curDDval===0?'0.00':curDDval.toFixed(2))+'%';
   document.getElementById('kpi-recovery').textContent=m.avgRecovery.toFixed(1)+' days';
 }
 
@@ -758,30 +821,80 @@ function peakFromTrades(trades){
 }
 
 /* ══════════════════════════════════════════
-   EQUITY CURVE — account balance (S$)
+   EQUITY CURVE — two lines: account balance + cumulative P&L
 ══════════════════════════════════════════ */
 function buildEquityCurve(trades){
   destroyChart('pnl');
   const byDay={};
   trades.forEach(t=>{const k=localDateKey(t.date);byDay[k]=(byDay[k]||0)+t.pnl;});
   const days=Object.keys(byDay).sort();
-  let balance=STARTING_BALANCE;
-  const labels=[],data=[];
-  days.forEach((d,i)=>{
-    balance+=byDay[d];
-    labels.push(i%5===0?d.slice(5):'');
-    data.push(parseFloat(balance.toFixed(2)));
+  if(!days.length) return;
+
+  // Build cumulative withdrawal by date
+  const wdByDate={}; // date → cumulative withdrawn up to and including that date
+  let cumW=0;
+  getWithdrawals().sort((a,b)=>a.date.localeCompare(b.date)).forEach(w=>{
+    cumW+=w.amount; wdByDate[w.date]=cumW;
   });
+  // Get withdrawal amount effective at a given day
+  function withdrawnAsOf(day){
+    let w=0;
+    Object.keys(wdByDate).forEach(d=>{if(d<=day)w=wdByDate[d];});
+    return w;
+  }
+
+  let cumPnl=0;
+  const labels=[],balData=[],pnlData=[];
+  days.forEach((d,i)=>{
+    cumPnl+=byDay[d];
+    const balance=STARTING_BALANCE+cumPnl-withdrawnAsOf(d);
+    labels.push(i%5===0?d.slice(5):'');
+    balData.push(parseFloat(balance.toFixed(2)));
+    pnlData.push(parseFloat((STARTING_BALANCE+cumPnl).toFixed(2)));
+  });
+
   const ctx=document.getElementById('pnlChart').getContext('2d');
-  const color=balance>=STARTING_BALANCE?'#3d5a4a':'#7a2e2e';
   const grad=ctx.createLinearGradient(0,0,0,200);
-  grad.addColorStop(0,balance>=STARTING_BALANCE?'rgba(61,90,74,0.20)':'rgba(122,46,46,0.15)');
+  grad.addColorStop(0,'rgba(61,90,74,0.15)');
   grad.addColorStop(1,'rgba(61,90,74,0.01)');
+
   charts['pnl']=new Chart(ctx,{
     type:'line',
-    data:{labels,datasets:[{data,borderColor:color,borderWidth:1.5,pointRadius:0,fill:true,backgroundColor:grad,tension:0.3}]},
+    data:{
+      labels,
+      datasets:[
+        {
+          label:'Account Balance',
+          data:balData,
+          borderColor:'#3d5a4a',
+          borderWidth:2,
+          pointRadius:0,
+          fill:true,
+          backgroundColor:grad,
+          tension:0.3,
+        },
+        {
+          label:'Cumulative P&L',
+          data:pnlData,
+          borderColor:'#2e4a5a',
+          borderWidth:1.5,
+          borderDash:[5,3],
+          pointRadius:0,
+          fill:false,
+          tension:0.3,
+        }
+      ]
+    },
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{...TOOLTIP,callbacks:{label:c=>'S$'+c.parsed.y.toLocaleString()}}},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          ...TOOLTIP,
+          callbacks:{
+            label:c=>c.dataset.label+': S$'+c.parsed.y.toLocaleString()
+          }
+        }
+      },
       scales:{
         x:{grid:{color:GRID},ticks:{color:TICK,font:{size:9},maxRotation:0}},
         y:{grid:{color:GRID},ticks:{color:TICK,font:{size:9},callback:v=>'S$'+v.toLocaleString()}}
@@ -1066,14 +1179,67 @@ function handleRRKey(e){
   if(e.key==='Enter') document.getElementById('rr-input').blur();
   if(e.key==='Escape'){ document.getElementById('rr-input').value=plannedRR; document.getElementById('rr-input').blur(); }
 }
+
+/* ══════════════════════════════════════════
+   WITHDRAWALS — localStorage persistence
+══════════════════════════════════════════ */
+const W_KEY = 'jl_withdrawals_v1';
+
+function getWithdrawals(){
+  try{ return JSON.parse(localStorage.getItem(W_KEY)||'[]'); }
+  catch(e){ return []; }
+}
+function saveWithdrawals(arr){ localStorage.setItem(W_KEY,JSON.stringify(arr)); }
+
+function addWithdrawal(){
+  const date  = document.getElementById('w-date').value;
+  const amount= parseFloat(document.getElementById('w-amount').value);
+  if(!date){ alert('Please select a date.'); return; }
+  if(!amount||amount<=0){ alert('Please enter a valid amount.'); return; }
+  const arr=getWithdrawals();
+  arr.push({id:Date.now(),date,amount:Math.round(amount*100)/100});
+  saveWithdrawals(arr);
+  document.getElementById('w-amount').value='';
+  renderWithdrawalList();
+  refresh();
+}
+
+function deleteWithdrawal(id){
+  saveWithdrawals(getWithdrawals().filter(w=>w.id!==id));
+  renderWithdrawalList();
+  refresh();
+}
+
+function renderWithdrawalList(){
+  const arr=getWithdrawals().sort((a,b)=>a.date.localeCompare(b.date));
+  const list=document.getElementById('w-list');
+  const totalEl=document.getElementById('w-total');
+  list.innerHTML='';
+  if(!arr.length){ totalEl.style.display='none'; return; }
+  arr.forEach(w=>{
+    const el=document.createElement('div');
+    el.className='withdrawal-item';
+    el.innerHTML=`<span>${w.date}</span><span class="withdrawal-item-amt">−S$${w.amount.toLocaleString()}</span><button class="withdrawal-del" onclick="deleteWithdrawal(${w.id})">✕</button>`;
+    list.appendChild(el);
+  });
+  const total=arr.reduce((s,w)=>s+w.amount,0);
+  totalEl.style.display='flex';
+  document.getElementById('w-total-val').textContent='S$'+total.toLocaleString();
+  const kwEl=document.getElementById('kpi-total-withdrawn');
+  if(kwEl) kwEl.textContent='S$'+Math.round(total).toLocaleString();
+}
+
 // Set default custom date inputs to this month
 const now=new Date();
 const y=now.getFullYear(),mo=String(now.getMonth()+1).padStart(2,'0');
 document.getElementById('dateFrom').value=`${y}-${mo}-01`;
 document.getElementById('dateTo').value=`${y}-${mo}-${String(new Date(y,now.getMonth()+1,0).getDate()).padStart(2,'0')}`;
+// Set default withdrawal date to today
+document.getElementById('w-date').value=`${y}-${mo}-${String(now.getDate()).padStart(2,'0')}`;
 
 // Init — fetch live data then render
 (async () => {
+  renderWithdrawalList();
   ALL_TRADES = await fetchTradeData();
   refresh();
 })();
