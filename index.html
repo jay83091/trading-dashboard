@@ -271,14 +271,16 @@
     <div class="card">
       <div class="card-label">Daily P&amp;L Stats</div>
       <div class="card-value teal" id="kpi-avg-daily">—</div>
-      <div class="card-sub" id="kpi-avg-daily-sub" style="margin-bottom:8px">avg per trading day</div>
-      <div class="metric-block" style="margin-top:4px">
-        <div class="metric-block-label">Best day</div>
-        <div class="metric-block-value" id="kpi-best-day" style="color:var(--green);font-size:16px">—</div>
-      </div>
-      <div class="metric-block" style="margin-top:6px">
-        <div class="metric-block-label">Worst day</div>
-        <div class="metric-block-value" id="kpi-worst-day" style="color:var(--red);font-size:16px">—</div>
+      <div class="card-sub" id="kpi-avg-daily-sub" style="margin-bottom:10px">avg per trading day</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:2px;">
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:9px 11px;">
+          <div style="font-size:9px;font-family:var(--mono);font-weight:600;color:var(--text2);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3px;">Best day</div>
+          <div style="font-size:16px;font-weight:700;font-family:var(--mono);color:var(--green)" id="kpi-best-day">—</div>
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:9px 11px;">
+          <div style="font-size:9px;font-family:var(--mono);font-weight:600;color:var(--text2);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3px;">Worst day</div>
+          <div style="font-size:16px;font-weight:700;font-family:var(--mono);color:var(--red)" id="kpi-worst-day">—</div>
+        </div>
       </div>
     </div>
   </div>
@@ -368,24 +370,36 @@
     <!-- Long / Short pie -->
     <div class="card">
       <div class="card-label">Long vs Short</div>
-      <div style="display:flex;align-items:center;gap:18px;margin-top:6px;">
+      <div style="display:flex;align-items:center;gap:14px;margin-top:6px;">
         <div style="position:relative;width:88px;height:88px;flex-shrink:0;">
           <canvas id="longShortPie" width="88" height="88"></canvas>
         </div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <div>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <div style="width:8px;height:8px;border-radius:50%;background:#3d5a4a;flex-shrink:0;"></div>
-              <div style="font-size:16px;font-weight:700;font-family:var(--mono);color:var(--green)" id="ls-long-pct">—</div>
+        <div style="display:flex;flex-direction:column;gap:8px;flex:1;">
+          <div style="background:rgba(61,90,74,0.08);border-radius:6px;padding:7px 10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:5px;">
+                <div style="width:7px;height:7px;border-radius:50%;background:#3d5a4a;flex-shrink:0;"></div>
+                <span style="font-size:11px;font-family:var(--mono);color:var(--text2);">Long</span>
+              </div>
+              <span style="font-size:14px;font-weight:700;font-family:var(--mono);color:var(--green)" id="ls-long-pct">—</span>
             </div>
-            <div style="font-size:10px;color:var(--text2);font-family:var(--mono)" id="ls-long-n">—</div>
+            <div style="display:flex;justify-content:space-between;margin-top:3px;">
+              <span style="font-size:10px;font-family:var(--mono);color:var(--text3)" id="ls-long-n">—</span>
+              <span style="font-size:10px;font-family:var(--mono);color:var(--text2)" id="ls-long-wr">—</span>
+            </div>
           </div>
-          <div>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <div style="width:8px;height:8px;border-radius:50%;background:#7a2e2e;flex-shrink:0;"></div>
-              <div style="font-size:16px;font-weight:700;font-family:var(--mono);color:var(--red)" id="ls-short-pct">—</div>
+          <div style="background:rgba(122,46,46,0.08);border-radius:6px;padding:7px 10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:5px;">
+                <div style="width:7px;height:7px;border-radius:50%;background:#7a2e2e;flex-shrink:0;"></div>
+                <span style="font-size:11px;font-family:var(--mono);color:var(--text2);">Short</span>
+              </div>
+              <span style="font-size:14px;font-weight:700;font-family:var(--mono);color:var(--red)" id="ls-short-pct">—</span>
             </div>
-            <div style="font-size:10px;color:var(--text2);font-family:var(--mono)" id="ls-short-n">—</div>
+            <div style="display:flex;justify-content:space-between;margin-top:3px;">
+              <span style="font-size:10px;font-family:var(--mono);color:var(--text3)" id="ls-short-n">—</span>
+              <span style="font-size:10px;font-family:var(--mono);color:var(--text2)" id="ls-short-wr">—</span>
+            </div>
           </div>
         </div>
       </div>
@@ -393,59 +407,69 @@
 
   </div>
   <div class="section-label">Returns &amp; risk</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:start;">
-    <div class="card">
-      <div class="card-title">Account balance <span id="chart-period-label">Equity curve · S$</span></div>
+  <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;align-items:start;">
 
-      <!-- Withdrawal entry panel -->
-      <div class="withdrawal-panel">
-        <div class="withdrawal-panel-title">Withdrawals</div>
-        <div class="withdrawal-form">
-          <input type="date" class="withdrawal-input" id="w-date">
-          <input type="number" class="withdrawal-input" id="w-amount" placeholder="Amount (S$)" min="0" step="0.01">
+    <!-- Chart card with toggle -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div class="card-title" style="margin-bottom:0" id="chart-period-label">Account balance · S$</div>
+        <div style="display:flex;gap:0;border:1px solid var(--border);border-radius:6px;overflow:hidden;">
+          <button id="toggle-balance" onclick="setChartMode('balance')"
+            style="font-family:var(--mono);font-size:10px;font-weight:600;padding:4px 10px;border:none;cursor:pointer;background:var(--accent);color:var(--bg2);transition:all 0.15s;">Balance</button>
+          <button id="toggle-growth" onclick="setChartMode('growth')"
+            style="font-family:var(--mono);font-size:10px;font-weight:600;padding:4px 10px;border:none;cursor:pointer;background:var(--bg3);color:var(--text2);transition:all 0.15s;">Growth %</button>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:8px;" id="chart-legend-balance">
+        <div style="display:flex;align-items:center;gap:5px;font-size:10px;font-family:var(--mono);color:var(--text2);">
+          <div style="width:18px;height:2px;background:#3d5a4a;"></div> Account balance
+        </div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:10px;font-family:var(--mono);color:var(--text2);">
+          <div style="width:18px;height:0;border-top:2px dashed #2e4a5a;"></div> Cumulative P&amp;L
+        </div>
+      </div>
+      <div style="display:none;" id="chart-legend-growth">
+        <div style="font-size:10px;font-family:var(--mono);color:var(--text2);margin-bottom:8px;">% return on starting capital</div>
+      </div>
+      <div class="chart-wrap" style="height:200px">
+        <canvas id="pnlChart" style="display:block"></canvas>
+        <canvas id="growthChart" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%"></canvas>
+      </div>
+    </div>
+
+    <!-- Withdrawals card -->
+    <div class="card">
+      <div class="card-label">Withdrawals</div>
+      <div style="display:flex;flex-direction:column;gap:7px;margin-top:6px;">
+        <input type="date" class="withdrawal-input" id="w-date" style="width:100%;">
+        <div style="display:flex;gap:6px;">
+          <input type="number" class="withdrawal-input" id="w-amount" placeholder="Amount (S$)" min="0" step="0.01" style="flex:1;min-width:0;">
           <button class="withdrawal-add-btn" onclick="addWithdrawal()">+ Add</button>
         </div>
-        <div class="withdrawal-list" id="w-list"></div>
-        <div class="withdrawal-total" id="w-total" style="display:none">
-          Total withdrawn: <span id="w-total-val">—</span>
-        </div>
       </div>
+      <div class="withdrawal-list" id="w-list" style="margin-top:10px;"></div>
+      <div class="withdrawal-total" id="w-total" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+        Total: <span id="w-total-val" style="color:var(--red);font-weight:600;">—</span>
+      </div>
+    </div>
 
-      <!-- Two-line equity chart -->
-      <div style="display:flex;align-items:center;gap:16px;margin-bottom:8px;">
-        <div style="display:flex;align-items:center;gap:5px;font-size:10px;font-family:var(--mono);color:var(--text2);">
-          <div style="width:20px;height:2px;background:#3d5a4a;border-radius:1px;"></div> Account balance
-        </div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:10px;font-family:var(--mono);color:var(--text2);">
-          <div style="width:20px;height:2px;background:#2e4a5a;border-radius:1px;border-top:1.5px dashed #2e4a5a;"></div> Cumulative P&amp;L
-        </div>
-      </div>
-      <div class="chart-wrap" style="height:200px"><canvas id="pnlChart"></canvas></div>
-    </div>
+    <!-- Drawdown card — simplified -->
     <div class="card">
-      <div class="card-title">Account growth <span>% return on starting capital</span></div>
-      <div class="chart-wrap" style="height:200px"><canvas id="growthChart"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-label">Max Drawdown</div>
+      <div class="card-label">Drawdown</div>
       <div class="card-value red" id="kpi-dd">—</div>
-      <div class="card-sub" id="kpi-dd-sub" style="margin-bottom:14px">—</div>
+      <div class="card-sub" style="margin-bottom:14px">max drawdown · peak to trough</div>
       <div class="metric-block">
         <div class="metric-block-label">Current drawdown</div>
         <div class="metric-block-value" id="kpi-cur-dd" style="color:var(--amber);font-size:18px">—</div>
         <div class="metric-block-sub">from last equity peak</div>
       </div>
       <div class="metric-block" style="margin-top:8px">
-        <div class="metric-block-label">Total withdrawn</div>
-        <div class="metric-block-value" id="kpi-total-withdrawn" style="color:var(--amber);font-size:18px">S$0</div>
-        <div class="metric-block-sub">transferred out of account</div>
-      </div>
-      <div class="metric-block" style="margin-top:8px">
-        <div class="metric-block-label">Avg recovery time</div>
+        <div class="metric-block-label">Avg days to recover</div>
         <div class="metric-block-value" id="kpi-recovery" style="color:var(--text2);font-size:18px">—</div>
-        <div class="metric-block-sub">across all drawdown events</div>
+        <div class="metric-block-sub">trading days from trough back to peak</div>
       </div>
     </div>
+
   </div>
 
   <!-- ── 4. Calendar (always current month) ── -->
@@ -622,8 +646,23 @@ function refresh(){
 function updatePeriodTag(){
   document.getElementById('periodTag').innerHTML =
     'Showing: <strong>'+periodLabel(activePeriod)+'</strong>';
+}
+
+/* ── Chart mode toggle ── */
+let chartMode = 'balance';
+function setChartMode(mode){
+  chartMode = mode;
+  const isBalance = mode === 'balance';
+  document.getElementById('pnlChart').style.display    = isBalance ? 'block' : 'none';
+  document.getElementById('growthChart').style.display = isBalance ? 'none'  : 'block';
+  document.getElementById('chart-legend-balance').style.display = isBalance ? 'flex' : 'none';
+  document.getElementById('chart-legend-growth').style.display  = isBalance ? 'none' : 'block';
   document.getElementById('chart-period-label').textContent =
-    periodLabel(activePeriod)+' · cumulative equity curve';
+    isBalance ? 'Account balance · S$' : 'Account growth · %';
+  document.getElementById('toggle-balance').style.background = isBalance ? 'var(--accent)' : 'var(--bg3)';
+  document.getElementById('toggle-balance').style.color = isBalance ? 'var(--bg2)' : 'var(--text2)';
+  document.getElementById('toggle-growth').style.background = isBalance ? 'var(--bg3)' : 'var(--accent)';
+  document.getElementById('toggle-growth').style.color = isBalance ? 'var(--text2)' : 'var(--bg2)';
 }
 
 /* ══════════════════════════════════════════
@@ -691,11 +730,22 @@ function calcMetrics(trades){
   const curDD=(currentEquity-peakEquity)/peakEquity*100;
   const accountGrowthPct=(currentEquity/STARTING_BALANCE-1)*100;
 
-  // Avg recovery
-  let runs=[],run=0;
-  sortedDays.forEach(k=>{if(byDay[k]<0)run++;else{if(run>0)runs.push(run);run=0;}});
-  if(run>0)runs.push(run);
-  const avgRecovery=runs.length?runs.reduce((s,v)=>s+v,0)/runs.length*1.5:0;
+  // Avg recovery — trading days from trough back to previous equity peak
+  let recoveryDays=[], inDD=false, troughDay=0, troughEquity=Infinity, ddPeak=STARTING_BALANCE;
+  let eq2=STARTING_BALANCE;
+  sortedDays.forEach((k,i)=>{
+    eq2+=byDay[k];
+    if(eq2>=ddPeak){ // recovered
+      if(inDD && troughDay>0) recoveryDays.push(i-troughDay);
+      ddPeak=eq2; inDD=false; troughEquity=Infinity;
+    } else {
+      inDD=true;
+      if(eq2<troughEquity){ troughEquity=eq2; troughDay=i; }
+    }
+  });
+  const avgRecovery=recoveryDays.length
+    ? Math.round(recoveryDays.reduce((s,v)=>s+v,0)/recoveryDays.length)
+    : null;
 
   // Daily P&L stats (replaces Sharpe)
   const avgDailyPnl  = dayPnls.length ? dayPnls.reduce((s,v)=>s+v,0)/dayPnls.length : 0;
@@ -721,7 +771,7 @@ function calcMetrics(trades){
     avgWin,avgLoss,grossWin,grossLoss,pf,expectancy,rrRealised,
     sharpe,sortino,winDays,totalDays:sortedDays.length,maxDD,curDD,avgRecovery,
     tradesPerMonth,longTrades,shortTrades,accountGrowthPct,currentEquity,
-    avgDailyPnl,bestDay,worstDay,dailyStdDev};
+    avgDailyPnl,bestDay,worstDay,dailyStdDev,dayPnls,sortedDays,byDay};
 }
 
 function fmt$(n){return(n>=0?'+S$':'-S$')+Math.abs(Math.round(n)).toLocaleString();}
@@ -734,7 +784,7 @@ function updateKPIs(trades){
      'kpi-avg-daily','kpi-avg-daily-sub','kpi-best-day','kpi-worst-day',
      'ring-pct','ring-wins','ring-losses','ring-total',
      'awl-win-val','awl-loss-val','awl-ratio','exp-val','exp-formula','exp-monthly','exp-n',
-     'rr-realised','rr-leak','kpi-dd','kpi-dd-sub','kpi-cur-dd','kpi-recovery']
+     'rr-realised','rr-leak','kpi-dd','kpi-cur-dd','kpi-recovery']
     .forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='No data';});
     return;
   }
@@ -806,10 +856,9 @@ function updateKPIs(trades){
   const maxDDval  = Math.abs(m.maxDD)  < 0.01 ? 0 : m.maxDD;
   const curDDval  = Math.abs(m.curDD)  < 0.01 ? 0 : m.curDD;
   document.getElementById('kpi-dd').textContent = Math.abs(maxDDval).toFixed(2)+'%';
-  const ddAmt=Math.abs(maxDDval/100*peakFromTrades(trades));
-  document.getElementById('kpi-dd-sub').innerHTML='Peak-to-trough · <span class="dn">−S$'+Math.round(ddAmt).toLocaleString()+'</span>';
-  document.getElementById('kpi-cur-dd').textContent=(curDDval<=0?'':'+')+(curDDval===0?'0.00':curDDval.toFixed(2))+'%';
-  document.getElementById('kpi-recovery').textContent=m.avgRecovery.toFixed(1)+' days';
+  document.getElementById('kpi-cur-dd').textContent=(curDDval>=0?'+':'')+curDDval.toFixed(2)+'%';
+  document.getElementById('kpi-recovery').textContent=
+    m.avgRecovery===null ? 'N/A — no completed recoveries yet' : m.avgRecovery+' trading days';
 }
 
 function peakFromTrades(trades){
@@ -957,13 +1006,18 @@ function buildWinRing(trades){
 ══════════════════════════════════════════ */
 function buildLongShortPie(trades){
   destroyChart('longshort');
-  const longs=trades.filter(t=>t.type==='buy').length;
-  const shorts=trades.filter(t=>t.type==='sell').length;
+  const longTrades  = trades.filter(t=>t.type==='buy');
+  const shortTrades = trades.filter(t=>t.type==='sell');
+  const longs=longTrades.length, shorts=shortTrades.length;
   const total=longs+shorts||1;
-  document.getElementById('ls-long-pct').textContent=Math.round(longs/total*100)+'%';
-  document.getElementById('ls-short-pct').textContent=Math.round(shorts/total*100)+'%';
-  document.getElementById('ls-long-n').textContent=longs+' trades';
-  document.getElementById('ls-short-n').textContent=shorts+' trades';
+  const longWR  = longs  ? Math.round(longTrades.filter(t=>t.isWin).length/longs*100)   : 0;
+  const shortWR = shorts ? Math.round(shortTrades.filter(t=>t.isWin).length/shorts*100) : 0;
+  document.getElementById('ls-long-pct').textContent  = Math.round(longs/total*100)+'%';
+  document.getElementById('ls-short-pct').textContent = Math.round(shorts/total*100)+'%';
+  document.getElementById('ls-long-n').textContent    = longs+' trades';
+  document.getElementById('ls-short-n').textContent   = shorts+' trades';
+  document.getElementById('ls-long-wr').textContent   = 'WR: '+longWR+'%';
+  document.getElementById('ls-short-wr').textContent  = 'WR: '+shortWR+'%';
   charts['longshort']=new Chart(document.getElementById('longShortPie').getContext('2d'),{
     type:'doughnut',
     data:{
@@ -1225,8 +1279,6 @@ function renderWithdrawalList(){
   const total=arr.reduce((s,w)=>s+w.amount,0);
   totalEl.style.display='flex';
   document.getElementById('w-total-val').textContent='S$'+total.toLocaleString();
-  const kwEl=document.getElementById('kpi-total-withdrawn');
-  if(kwEl) kwEl.textContent='S$'+Math.round(total).toLocaleString();
 }
 
 // Set default custom date inputs to this month
