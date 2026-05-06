@@ -522,6 +522,8 @@ const GRID='rgba(44,42,38,0.07)', TICK='#b0ada6';
    Paste the published URL below
 ══════════════════════════════════════════ */
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRlwN1i_Y0SFs92ciQfmwWNBYy8ugMQIQ_50uGMXlGQR_1XeTYUBipTK99Jumun5FwNx5jLtlpoZLCi/pub?gid=205809442&single=true&output=csv';
+// account_info tab URL — gid replaced at embed time by the Python script
+const ACCOUNT_INFO_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRlwN1i_Y0SFs92ciQfmwWNBYy8ugMQIQ_50uGMXlGQR_1XeTYUBipTK99Jumun5FwNx5jLtlpoZLCi/pub?gid=1421814297&single=true&output=csv';
 
 let ALL_TRADES = [];
 
@@ -554,14 +556,32 @@ function parseSheetCSV(csvText){
 }
 
 async function fetchTradeData(){
-  // Show loading state
   document.getElementById('syncLabel').textContent = 'syncing...';
   try {
-    const res = await fetch(SHEET_CSV_URL + '&t=' + Date.now()); // cache-bust
-    if(!res.ok) throw new Error('HTTP ' + res.status);
-    const csv = await res.text();
+    // Fetch account info (starting balance) and trades in parallel
+    const [infoRes, tradesRes] = await Promise.all([
+      fetch(ACCOUNT_INFO_URL + '&t=' + Date.now()).catch(() => null),
+      fetch(SHEET_CSV_URL    + '&t=' + Date.now()),
+    ]);
+
+    // Parse account_info — update STARTING_BALANCE if available
+    if(infoRes && infoRes.ok){
+      const infoCsv = await infoRes.text();
+      const infoLines = infoCsv.trim().split('\n').slice(1); // skip header
+      infoLines.forEach(line => {
+        const [key, val] = line.split(',').map(v => v.trim().replace(/"/g,''));
+        if(key === 'starting_balance' && !isNaN(parseFloat(val))){
+          STARTING_BALANCE = parseFloat(val);
+          console.log('Starting balance loaded from sheet:', STARTING_BALANCE);
+        }
+      });
+    }
+
+    if(!tradesRes.ok) throw new Error('HTTP ' + tradesRes.status);
+    const csv = await tradesRes.text();
     const trades = parseSheetCSV(csv);
     if(!trades.length) throw new Error('No trades parsed');
+
     const now = new Date();
     document.getElementById('syncLabel').textContent =
       'last sync: ' + now.getHours().toString().padStart(2,'0') + ':' +
@@ -582,7 +602,7 @@ setInterval(async () => {
   refresh();
 }, 5 * 60 * 1000);
 
-const STARTING_BALANCE = 1300; // SGD — account balance on first trade date
+let STARTING_BALANCE = 1000; // SGD — overridden dynamically from account_info sheet tab
 
 // Use local date string to preserve SGT timezone from sync script
 function localDateKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
