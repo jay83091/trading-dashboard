@@ -913,7 +913,8 @@ function buildEquityCurve(trades){
   }
 
   let cumPnl=0;
-  const labels=[],balData=[],pnlData=[];
+  // Prepend a "Start" anchor at STARTING_BALANCE before first trading day
+  const labels=['Start'], balData=[STARTING_BALANCE], pnlData=[STARTING_BALANCE];
   days.forEach((d,i)=>{
     cumPnl+=byDay[d];
     const balance=STARTING_BALANCE+cumPnl-withdrawnAsOf(d);
@@ -981,7 +982,8 @@ function buildGrowthChart(trades){
   trades.forEach(t=>{const k=localDateKey(t.date);byDay[k]=(byDay[k]||0)+t.pnl;});
   const days=Object.keys(byDay).sort();
   let balance=STARTING_BALANCE;
-  const labels=[],data=[];
+  // Prepend 0% anchor before first trading day
+  const labels=['Start'], data=[0];
   days.forEach((d,i)=>{
     balance+=byDay[d];
     labels.push(i%5===0?d.slice(5):'');
